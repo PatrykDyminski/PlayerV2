@@ -6,31 +6,69 @@ import android.os.Bundle
 import android.os.Handler
 import kotlinx.android.synthetic.main.activity_main.*
 import android.widget.SeekBar
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var viewAdapter: RecyclerView.Adapter<*>
+    private lateinit var viewManager: RecyclerView.LayoutManager
+
     lateinit var mediaPlayer: MediaPlayer
     private var userIsSeeking = false
+
+    private val handler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         mediaPlayer = MediaPlayer.create(this, R.raw.mus)
+
+        playBtn.setOnClickListener { play() }
+        stopBtn.setOnClickListener { stop() }
+        initializeSeekBar()
+        prepareLabels()
+
+        val myDataset = ArrayList<Song>()
+        myDataset.add(Song("Ptrzykładowy song","autor songa",R.raw.mus))
+        myDataset.add(Song("Ptrzykładowy song","autor songa",R.raw.mus))
+        myDataset.add(Song("Ptrzykładowy song","autor songa",R.raw.mus))
+        myDataset.add(Song("Ptrzykładowy song","autor songa",R.raw.mus))
+        myDataset.add(Song("Ptrzykładowy song","autor songa",R.raw.mus))
+        myDataset.add(Song("Ptrzykładowy song","autor songa",R.raw.mus))
+        myDataset.add(Song("Ptrzykładowy song","autor songa",R.raw.mus))
+
+        viewManager = LinearLayoutManager(this)
+        viewAdapter = MyAdapter(this,myDataset)
+
+        recyclerView = my_recycler.apply {
+            layoutManager = viewManager
+            adapter = viewAdapter
+        }
+
+        handler.postDelayed(runUpdates,1000)
+    }
+
+    /*
+    override fun onStart() {
+        super.onStart()
+        val fragmentManager = supportFragmentManager
+        val fragmentTransaction = fragmentManager.beginTransaction()
+        val fragment = LibraryFragment()
+        fragmentTransaction.add(R.id.activity_main, fragment)
+        fragmentTransaction.commit()
+    }
+    */
+
+    private fun prepareLabels() {
         seekBar.max = mediaPlayer.duration
 
         val seconds = (mediaPlayer.duration / 1000) % 60
         val minutes = (mediaPlayer.duration / (1000 * 60) % 60)
         range.text = "$minutes:${"%02d".format(seconds)}"
-
-        playBtn.setOnClickListener { play() }
-        stopBtn.setOnClickListener { stop() }
-        initializeSeekBar()
-
-        handler.postDelayed(runUpdates,1000)
     }
 
     private fun stop() {
@@ -73,15 +111,15 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private val handler = Handler()
-
     private val runUpdates = object: Runnable{
         override fun run() {
             val currentPosition = mediaPlayer.currentPosition
             val seconds = (currentPosition / 1000) % 60
             val minutes = (currentPosition / (1000 * 60) % 60)
 
-            seekBar.progress = currentPosition
+            if(!userIsSeeking){
+                seekBar.progress = currentPosition
+            }
             currentTimeLabel.text = "$minutes:${"%02d".format(seconds)}"
 
             handler.postDelayed(this, 1000)
