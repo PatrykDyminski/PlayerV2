@@ -3,6 +3,7 @@ package com.example.playerv2
 import android.media.MediaPlayer
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import kotlinx.android.synthetic.main.activity_main.*
 import android.widget.SeekBar
 import java.util.concurrent.Executors
@@ -28,7 +29,8 @@ class MainActivity : AppCompatActivity() {
         playBtn.setOnClickListener { play() }
         stopBtn.setOnClickListener { stop() }
         initializeSeekBar()
-        startUpdatingCallbackWithPosition()
+
+        handler.postDelayed(runUpdates,1000)
     }
 
     private fun stop() {
@@ -71,33 +73,18 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private lateinit var executor: ScheduledExecutorService
-    private lateinit var updateTask: Runnable
+    private val handler = Handler()
 
-    private fun startUpdatingCallbackWithPosition() {
-        executor = Executors.newSingleThreadScheduledExecutor()
-        updateTask = Runnable { updateSeekBar() }
-        executor.scheduleAtFixedRate(
-            updateTask,
-            0,
-            1000,
-            TimeUnit.MILLISECONDS
-        )
-    }
-
-    private fun updateRange() {
-        if (mediaPlayer.isPlaying) {
+    private val runUpdates = object: Runnable{
+        override fun run() {
             val currentPosition = mediaPlayer.currentPosition
             val seconds = (currentPosition / 1000) % 60
             val minutes = (currentPosition / (1000 * 60) % 60)
-            range.text = "$minutes:${"%02d".format(seconds)}"
-        }
-    }
 
-    private fun updateSeekBar() {
-        if (mediaPlayer.isPlaying) {
-            val currentPosition = mediaPlayer.currentPosition
             seekBar.progress = currentPosition
+            currentTimeLabel.text = "$minutes:${"%02d".format(seconds)}"
+
+            handler.postDelayed(this, 1000)
         }
     }
 
